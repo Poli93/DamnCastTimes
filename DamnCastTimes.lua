@@ -3,6 +3,7 @@ local spellFormat = "%.1f"
 local channelFormat = "%.1f"
 local channelDelay = "|cffff2020%-.2f|r"
 local castDelay = "|cffff2020%.2f|r"
+local gstartTime = 0 
 
 function DCT:Enable()
 	local path = GameFontHighlight:GetFont()
@@ -31,7 +32,10 @@ function CastingBarFrame_OnUpdate(...)
 	
 	if( this.casting and CastingBarFrame.maxValue ) then
 		if( not this.spellPushback ) then
-			DCT.castTimeText:SetText(format(spellFormat, CastingBarFrame.maxValue - GetTime()))
+			--print(CastingBarFrame.value)
+			--print(CastingBarFrame.maxValue)
+			local timeLeft = ((gstartTime + CastingBarFrame.maxValue * 1000) - GetTime() * 1000)/1000
+			DCT.castTimeText:SetText(format(spellFormat, timeLeft))
 		else
 			DCT.castTimeText:SetText("|cffff2020+|r" .. format(castDelay .. " " .. spellFormat, this.spellPushback, CastingBarFrame.maxValue - GetTime()))
 		end
@@ -39,7 +43,7 @@ function CastingBarFrame_OnUpdate(...)
 		DCT.castTimeText:Show()
 	elseif( this.channeling and CastingBarFrame.endTime ) then
 		if( not this.spellPushback ) then
-			DCT.castTimeText:SetText(format(channelFormat, CastingBarFrame.endTime - GetTime()))
+			DCT.castTimeText:SetText(format(channelFormat, (CastingBarFrame.endTime - GetTime()*1000 - gstartTime)))
 		else
 			DCT.castTimeText:SetText("|cffff2020-|r" .. format(channelDelay .. " " .. spellFormat, this.spellPushback, CastingBarFrame.endTime - GetTime()))
 		end
@@ -51,7 +55,7 @@ function CastingBarFrame_OnUpdate(...)
 end
 
 local orig_CastingBarFrame_OnEvent = CastingBarFrame_OnEvent
-function CastingBarFrame_OnEvent(event, unit, ...)
+function CastingBarFrame_OnEvent(_, event, unit, ...)
 	if( unit == "player" ) then
 		if( event == "UNIT_SPELLCAST_DELAYED" ) then
 			local name, _, _, _, startTime, endTime = UnitCastingInfo(CastingBarFrame.unit)
@@ -69,12 +73,18 @@ function CastingBarFrame_OnEvent(event, unit, ...)
 			end
 			
 			this.spellPushback = this.startTime - ( startTime / 1000 )
-		elseif( event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" ) then
+		elseif( event == "UNIT_SPELLCAST_START" ) then
+			local name, _, _, _, startTime, endTime = UnitCastingInfo(CastingBarFrame.unit)
+			gstartTime = startTime
+			
+			this.spellPushback = nil
+		elseif(event == "UNIT_SPELLCAST_CHANNEL_START" ) then
+			local name, _, _, _, startTime, endTime = UnitChannelInfo(CastingBarFrame.unit)
 			this.spellPushback = nil
 		end
 	end
 
-	orig_CastingBarFrame_OnEvent(event, unit, ...)
+	orig_CastingBarFrame_OnEvent(_, event, unit, ...)
 end
 
 local frame = CreateFrame("Frame")
