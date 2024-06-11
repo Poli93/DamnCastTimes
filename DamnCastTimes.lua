@@ -41,9 +41,9 @@ function CastingBarFrame_OnUpdate(...)
 		end
 		
 		DCT.castTimeText:Show()
-	elseif( this.channeling and CastingBarFrame.endTime ) then
+	elseif( this.channeling and CastingBarFrame.value ) then
 		if( not this.spellPushback ) then
-			DCT.castTimeText:SetText(format(channelFormat, (CastingBarFrame.endTime - GetTime()*1000 - gstartTime)))
+			DCT.castTimeText:SetText(format(channelFormat, (CastingBarFrame.value)))
 		else
 			DCT.castTimeText:SetText("|cffff2020-|r" .. format(channelDelay .. " " .. spellFormat, this.spellPushback, CastingBarFrame.endTime - GetTime()))
 		end
@@ -80,6 +80,7 @@ function CastingBarFrame_OnEvent(_, event, unit, ...)
 			this.spellPushback = nil
 		elseif(event == "UNIT_SPELLCAST_CHANNEL_START" ) then
 			local name, _, _, _, startTime, endTime = UnitChannelInfo(CastingBarFrame.unit)
+			gstartTime = startTime
 			this.spellPushback = nil
 		end
 	end
